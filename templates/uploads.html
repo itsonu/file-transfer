@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Transfer</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Custom CSS for alerts */
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+
+        .alert-info {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .alert-success {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .alert-danger {
+            background-color: #dc3545;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>File Transfer</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" name="file" id="file" class="inputfile" onchange="uploadFile(this.files)" />
+            <label for="file">Choose a file</label>
+            <button type="button" onclick="uploadFile()">Upload</button>
+        </form>
+        <div id="statusDiv"></div>
+        <div class="instructions">
+            <p>Click on "Choose a file" to select a file for upload.</p>
+            <p>Or you can drag and drop files directly onto this area.</p>
+            <p>Once selected, click on "Upload" to start the transfer.</p>
+            <p>Use the navigation links below to go back:</p>
+            <p><a href="/">Home</a> | <a href="/downloads">Downloadable Files</a></p>
+        </div>
+    </div>
+
+    <script>
+        function createAlert(message, type) {
+            const statusDiv = document.getElementById('statusDiv');
+            const alertDiv = document.createElement('div');
+            alertDiv.classList.add('alert');
+            alertDiv.classList.add('alert-' + type);
+            alertDiv.textContent = message;
+            statusDiv.appendChild(alertDiv);
+            // Close alert after 5 seconds
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        function uploadFile(files) {
+            const fileInput = document.getElementById('file');
+            const file = files ? files[0] : fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                createAlert('Uploading file...', 'info');
+
+                fetch('/transfer', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('File uploaded successfully.');
+                        createAlert('File uploaded successfully.', 'success');
+                        // window.location.reload();
+                    } else {
+                        console.error('Error uploading file.');
+                        createAlert('Error uploading file.', 'danger');
+                    }
+                }).catch(error => {
+                    console.error('Error uploading file:', error);
+                    createAlert('Error uploading file.', 'danger');
+                });
+            } else {
+                console.error('No file selected.');
+            }
+        }
+    </script>
+</body>
+
+</html>

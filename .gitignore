@@ -1,0 +1,8 @@
+# personal files that were being transferred — never publish
+uploads/
+build/
+dist/
+__pycache__/
+*.pyc
+*.log
+.env

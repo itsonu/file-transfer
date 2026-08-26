@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Transfer</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="/manifest.json">
+
+</head>
+
+<body>
+    <div class="container">
+        <h1>Welcome to File Transfer</h1>
+        <p id="server-url">Server URL: {{ server_url }}</p>
+        <div class="options">
+            <a href="/upload">Upload</a> | 
+            <a href="/downloads">Downloads</a>
+        </div>
+        <div class="instructions">
+            <p>Share the server URL:</p>
+            <button onclick="copyServerUrl()">Copy</button>
+            <button onclick="shareServerUrl()">Share</button>
+        </div>
+    </div>
+
+    <script>
+        function copyServerUrl() {
+            const serverUrlElement = document.getElementById('server-url');
+            const serverUrl = serverUrlElement.textContent.trim();
+
+            // Check if navigator.clipboard is supported
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // If supported, copy the server URL to the clipboard
+                navigator.clipboard.writeText(serverUrl)
+                    .then(() => {
+                        alert('Server URL copied to clipboard');
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+            } else {
+                // If not supported, display a message to the user
+                alert('Copying to clipboard is not supported in this browser.');
+            }
+        }
+
+
+        async function shareServerUrl() {
+            const serverUrlElement = document.getElementById('server-url');
+            const serverUrl = serverUrlElement.textContent.trim();
+            try {
+                if (navigator.share) {
+                    await navigator.share({
+                        title: document.title,
+                        url: window.location.href
+                    });
+                    console.log('Link shared successfully');
+                } else {
+                    throw new Error('Web Share API not supported');
+                }
+            } catch (error) {
+                console.error('Error sharing link:', error.message);
+            }
+        }
+    </script>
+
+    <script>
+        // Register service worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/static/service-worker.js')
+                        .then((registration) => {
+                            console.log('Service worker registered:', registration);
+                        })
+                        .catch((error) => {
+                            console.error('Service worker registration failed:', error);
+                        });
+                });
+            }
+    </script>
+</body>
+
+</html>
