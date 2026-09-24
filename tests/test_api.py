@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import os
 import zipfile
 from pathlib import Path
 from urllib.parse import quote
@@ -250,10 +251,12 @@ def test_files_copied_in_by_the_owner_are_downloadable(
     client: FlaskClient, share_dir: Path
 ) -> None:
     # Names safe_filename would rewrite: macOS NFD, "?", double spaces, 244-byte dedupes
-    names = ["Cafe\u0301.pdf", "what?.txt", "two  spaces.txt"]
+    names = ["Cafe\u0301.pdf", "two  spaces.txt"]
+    if os.name != "nt":  # Windows can't create names containing "?"
+        names.append("what?.txt")
     for name in names:
         (share_dir / name).write_bytes(b"x")
-    long_name = "a" * 236 + ".txt"
+    long_name = "é" * 118 + ".txt"  # 240 bytes but only 122 characters (Windows MAX_PATH)
     upload(client, long_name)
     second = upload(client, long_name).json["files"][0]["name"]
     listed = {f["name"] for f in client.get("/api/files").json["files"]}
@@ -261,14 +264,12 @@ def test_files_copied_in_by_the_owner_are_downloadable(
         assert name in listed
         assert client.get(f"/files/{quote(name)}").status_code == 200, name
     with zipfile.ZipFile(io.BytesIO(client.get("/api/archive").data)) as zf:
-        assert len(zf.namelist()) == 5
+        assert len(zf.namelist()) == len(names) + 2
     res = client.delete(f"/api/files/{quote(second)}")
     assert res.status_code == 200
 
 
 def test_archive_handles_files_older_than_1980(client: FlaskClient, share_dir: Path) -> None:
-    import os
-
     upload(client, "old.txt", b"vintage")
     os.utime(share_dir / "old.txt", (0, 0))
     with zipfile.ZipFile(io.BytesIO(client.get("/api/archive").data)) as zf:
