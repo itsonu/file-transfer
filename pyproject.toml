@@ -61,10 +61,11 @@ e2e = ["playwright>=1.45"]
 open-transfer = "open_transfer.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/itsonu/file-transfer"
-Documentation = "https://github.com/itsonu/file-transfer#readme"
-Issues = "https://github.com/itsonu/file-transfer/issues"
-Changelog = "https://github.com/itsonu/file-transfer/blob/main/CHANGELOG.md"
+Homepage = "https://itsonu.github.io/open-transfer/"
+Source = "https://github.com/itsonu/open-transfer"
+Documentation = "https://github.com/itsonu/open-transfer#readme"
+Issues = "https://github.com/itsonu/open-transfer/issues"
+Changelog = "https://github.com/itsonu/open-transfer/blob/main/CHANGELOG.md"
 
 [tool.hatch.version]
 path = "src/open_transfer/__init__.py"

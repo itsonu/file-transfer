@@ -12,7 +12,7 @@ Open Transfer runs happily on a laptop you start when needed, but also as an alw
 The repository includes a `Dockerfile` and `docker-compose.yml`.
 
 ```bash
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 docker compose up -d
 ```
@@ -37,7 +37,7 @@ Release images are published to `ghcr.io/itsonu/open-transfer` for `linux/amd64`
 ```bash
 sudo useradd --system --create-home --home-dir /srv/open-transfer open-transfer
 sudo -u open-transfer python3 -m venv /srv/open-transfer/venv
-sudo -u open-transfer /srv/open-transfer/venv/bin/pip install git+https://github.com/itsonu/file-transfer
+sudo -u open-transfer /srv/open-transfer/venv/bin/pip install git+https://github.com/itsonu/open-transfer
 ```
 
 `/etc/systemd/system/open-transfer.service`:

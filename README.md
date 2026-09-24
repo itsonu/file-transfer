@@ -6,8 +6,10 @@
 
 **AirDrop for every device.** Share files between your phone, laptop and anything else on your Wi‑Fi — straight from the browser. No app, no account, no cloud.
 
-[![CI](https://github.com/itsonu/file-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/itsonu/file-transfer/actions/workflows/ci.yml)
-[![Security](https://github.com/itsonu/file-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/itsonu/file-transfer/actions/workflows/security.yml)
+**[Website](https://itsonu.github.io/open-transfer/)** · **[Download](https://github.com/itsonu/open-transfer/releases/latest)** · **[Docs](docs/architecture.md)**
+
+[![CI](https://github.com/itsonu/open-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/itsonu/open-transfer/actions/workflows/ci.yml)
+[![Security](https://github.com/itsonu/open-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/itsonu/open-transfer/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)
 ![Platforms](https://img.shields.io/badge/runs%20on-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Docker-555.svg)
@@ -50,7 +52,7 @@ Run it on one computer; every other device just opens a link (or scans a QR code
 
 ### Option 1 — Download the app (no Python needed)
 
-Grab the file for your computer from the [latest release](https://github.com/itsonu/file-transfer/releases/latest) and double-click it. A window shows the address, a QR code and where files are saved (`Downloads/Open Transfer`); your browser opens automatically. Close the window to stop sharing.
+Grab the file for your computer from the [latest release](https://github.com/itsonu/open-transfer/releases/latest) and double-click it. A window shows the address, a QR code and where files are saved (`Downloads/Open Transfer`); your browser opens automatically. Close the window to stop sharing.
 
 | Computer | File | First launch |
 | -------- | ---- | ------------ |
@@ -75,7 +77,7 @@ You need **Python 3.10+** ([download](https://www.python.org/downloads/)). Every
 **macOS / Linux**
 
 ```bash
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 ./run.sh
 ```
@@ -83,7 +85,7 @@ cd open-transfer
 **Windows (PowerShell)**
 
 ```powershell
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 .\run.ps1
 ```
@@ -107,7 +109,7 @@ Your browser opens and the terminal shows the address and a QR code:
 
 | Method | Command |
 | ------ | ------- |
-| **pipx / uv** (installs the `open-transfer` command) | `pipx install git+https://github.com/itsonu/file-transfer` or `uv tool install git+https://github.com/itsonu/file-transfer` |
+| **pipx / uv** (installs the `open-transfer` command) | `pipx install git+https://github.com/itsonu/open-transfer` or `uv tool install git+https://github.com/itsonu/open-transfer` |
 | **Docker** | `docker compose up -d` (see [Self-hosting](#self-hosting--docker)) |
 | **Standalone app** (no Python needed) | See [Option 1](#option-1--download-the-app-no-python-needed), or build it with `python3 scripts/build_app.py` |
 | **From source, manually** | `python -m venv .venv && .venv/bin/pip install -e . && .venv/bin/open-transfer` |
@@ -322,7 +324,7 @@ nginx limits request bodies to 1 MB by default. Set `client_max_body_size 0;` an
 - [ ] Translations (i18n)
 - [ ] Publish to PyPI and Homebrew
 
-Have an idea? [Open a feature request](https://github.com/itsonu/file-transfer/issues/new/choose).
+Have an idea? [Open a feature request](https://github.com/itsonu/open-transfer/issues/new/choose).
 
 ## Contributing
 

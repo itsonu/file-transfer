@@ -4,7 +4,7 @@ Thanks for helping! Bug reports, docs fixes, design polish and code are all welc
 
 ## Ways to help
 
-- **Report a bug** — use the [bug template](https://github.com/itsonu/file-transfer/issues/new/choose). Include the sharing OS, the device/browser that failed and `--verbose` output.
+- **Report a bug** — use the [bug template](https://github.com/itsonu/open-transfer/issues/new/choose). Include the sharing OS, the device/browser that failed and `--verbose` output.
 - **Suggest a feature** — describe the problem first; check the [roadmap](README.md#roadmap).
 - **Pick up an issue** — look for `good first issue` and `help wanted`. Comment so nobody duplicates work.
 - **Security issues** — please don't open a public issue; see [SECURITY.md](SECURITY.md).
@@ -14,7 +14,7 @@ Thanks for helping! Bug reports, docs fixes, design polish and code are all welc
 Requirements: Python 3.10+, Git, and optionally Node.js (for `node --check` in `make lint`).
 
 ```bash
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 make setup        # .venv with dev tools, pre-commit hooks, Playwright Chromium
 make dev          # runs on ./.dev-share with request logging

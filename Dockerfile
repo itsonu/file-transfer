@@ -9,7 +9,7 @@ RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels . \
 FROM python:3.13-slim
 LABEL org.opencontainers.image.title="Open Transfer" \
       org.opencontainers.image.description="AirDrop-style file sharing for every device on your network" \
-      org.opencontainers.image.source="https://github.com/itsonu/file-transfer" \
+      org.opencontainers.image.source="https://github.com/itsonu/open-transfer" \
       org.opencontainers.image.licenses="MIT"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

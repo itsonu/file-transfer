@@ -28,7 +28,9 @@ jobs:
       - run: ruff format --check .
       - run: mypy
       - name: JavaScript syntax
-        run: node --check src/open_transfer/static/app.js
+        run: node --check src/open_transfer/static/app.js && node --check site/site.js
+      - name: Website builds with no broken local links
+        run: python scripts/build_site.py
 
   test:
     name: Tests (${{ matrix.os }}, py${{ matrix.python }})
