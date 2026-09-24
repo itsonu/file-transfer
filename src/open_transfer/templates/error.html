@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{ status }} · Open Transfer</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/logo.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <main class="error-page">
+    <div class="empty">
+      <p class="error-code">{{ status }}</p>
+      <h1>{% if status == 404 %}Not found{% elif status == 401 %}PIN required{% elif status == 403 %}Not allowed{% else %}Something went wrong{% endif %}</h1>
+      <p class="muted">{{ message }}</p>
+      <a class="btn btn-primary" href="/">Back to Open Transfer</a>
+    </div>
+  </main>
+</body>
+</html>

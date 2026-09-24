@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check --output-format=github .
+      - run: ruff format --check .
+      - run: mypy
+      - name: JavaScript syntax
+        run: node --check src/open_transfer/static/app.js
+
+  test:
+    name: Tests (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: macos-latest
+            python: "3.13"
+          - os: windows-latest
+            python: "3.13"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+          allow-prereleases: true
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -m "not e2e" --cov --cov-report=term-missing --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
+        with:
+          name: coverage
+          path: coverage.xml
+
+  e2e:
+    name: Browser end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[dev,e2e]"
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -m e2e -v
+
+  runner:
+    name: One-command runner (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Start with run.sh
+        if: runner.os != 'Windows'
+        run: |
+          ./run.sh --no-browser --no-qr --port 5055 &
+          for i in $(seq 1 90); do curl -sf http://127.0.0.1:5055/api/health && exit 0; sleep 1; done
+          exit 1
+      - name: Start with run.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Start-Process pwsh -ArgumentList "-File", ".\run.ps1", "--no-browser", "--no-qr", "--port", "5055"
+          for ($i = 0; $i -lt 90; $i++) {
+            try { Invoke-RestMethod http://127.0.0.1:5055/api/health; exit 0 } catch { Start-Sleep 1 }
+          }
+          exit 1
+
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t open-transfer:ci .
+      - name: Smoke test
+        run: |
+          docker run -d --name ot -p 5000:5000 open-transfer:ci
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:5000/api/health && break; sleep 1; done
+          echo "hello" | curl -sf -X POST -H "X-Filename: hello.txt" --data-binary @- http://127.0.0.1:5000/api/files
+          curl -sf http://127.0.0.1:5000/files/hello.txt | grep -q hello
+          docker logs ot

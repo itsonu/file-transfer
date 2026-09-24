@@ -1,0 +1,18 @@
+# docker compose up -d   →   open http://<this-machine's-IP>:5000
+services:
+  open-transfer:
+    image: ghcr.io/itsonu/open-transfer:latest
+    build: .
+    container_name: open-transfer
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/data
+    environment:
+      # Inside a container the app can't see your LAN address, so tell it
+      # what to show in the QR code and "Add a device" sheet:
+      # OPEN_TRANSFER_PUBLIC_URL: "http://192.168.1.20:5000"
+      # OPEN_TRANSFER_PIN: "4821"
+      # OPEN_TRANSFER_MAX_SIZE: "4G"
+      OPEN_TRANSFER_NO_QR: "1"

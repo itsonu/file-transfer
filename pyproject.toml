@@ -1,0 +1,114 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "open-transfer"
+dynamic = ["version"]
+description = "AirDrop-style file sharing for every device on your network. No app, no account, no cloud — just open a link."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "Open Transfer contributors" }]
+keywords = [
+  "file-sharing",
+  "file-transfer",
+  "airdrop",
+  "lan",
+  "local-network",
+  "self-hosted",
+  "p2p",
+  "qr-code",
+  "flask",
+  "pwa",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Web Environment",
+  "Framework :: Flask",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Communications :: File Sharing",
+  "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+  "flask>=3.0,<4",
+  "cheroot>=10.0",
+  "segno>=1.6",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "pre-commit>=3.5",
+  "pip-audit>=2.7",
+]
+e2e = ["playwright>=1.45"]
+
+[project.scripts]
+open-transfer = "open_transfer.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/itsonu/file-transfer"
+Documentation = "https://github.com/itsonu/file-transfer#readme"
+Issues = "https://github.com/itsonu/file-transfer/issues"
+Changelog = "https://github.com/itsonu/file-transfer/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/open_transfer/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/open_transfer"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "S", "SIM", "C4", "RUF", "PT", "RET"]
+ignore = [
+  "E501", # line length is handled by the formatter
+  "S104", # binding to 0.0.0.0 is the whole point of a LAN server
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108", "S310", "S603"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["cheroot.*", "segno.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = ["e2e: browser end-to-end tests (need Playwright + Chromium)"]
+
+[tool.coverage.run]
+source = ["open_transfer"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

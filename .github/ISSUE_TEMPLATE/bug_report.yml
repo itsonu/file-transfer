@@ -1,0 +1,47 @@
+name: Bug report
+description: Something doesn't work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this! Please check existing issues first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start with `open-transfer --pin`
+        2. Open the link on an iPhone
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Open Transfer version
+      description: Output of `open-transfer --version`
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Sharing computer
+      placeholder: macOS 15, Windows 11, Ubuntu 24.04, Docker…
+  - type: input
+    id: client
+    attributes:
+      label: Device / browser that had the problem
+      placeholder: iPhone 16 Safari, Pixel 9 Chrome, Firefox 140…
+  - type: textarea
+    id: logs
+    attributes:
+      label: Terminal output
+      description: Run with `--verbose` if you can. Remove anything private.
+      render: text
