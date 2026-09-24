@@ -7,7 +7,7 @@ Security fixes are released for the latest minor version (currently **2.0.x**).
 ## Reporting a vulnerability
 
 Please **do not open a public issue**. Report privately through
-[GitHub Security Advisories](https://github.com/itsonu/file-transfer/security/advisories/new)
+[GitHub Security Advisories](https://github.com/itsonu/open-transfer/security/advisories/new)
 ("Report a vulnerability").
 
 Include what you found, how to reproduce it, and the impact you expect. You'll get an acknowledgement within **3 working days** and a plan or fix timeline within **10 working days**. We'll credit you in the release notes unless you prefer otherwise.

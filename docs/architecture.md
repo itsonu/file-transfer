@@ -23,7 +23,8 @@ src/open_transfer/
 ├── templates/      index.html (app shell), error.html
 └── static/         app.js, app.css, manifest, icons
 tests/              pytest: storage, API, security, CLI; tests/e2e: Playwright
-scripts/            screenshots.py (regenerates docs/screenshots)
+scripts/            build_app.py (standalone app), build_site.py (website), screenshots.py
+site/               project website, published to GitHub Pages
 packaging/          PyInstaller spec for standalone binaries
 ```
 

@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" markdown="1">
 
 <img src="src/open_transfer/static/icons/logo.svg" width="88" height="88" alt="Open Transfer logo">
 
@@ -6,8 +6,10 @@
 
 **AirDrop for every device.** Share files between your phone, laptop and anything else on your Wi‑Fi — straight from the browser. No app, no account, no cloud.
 
-[![CI](https://github.com/itsonu/file-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/itsonu/file-transfer/actions/workflows/ci.yml)
-[![Security](https://github.com/itsonu/file-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/itsonu/file-transfer/actions/workflows/security.yml)
+**[Website](https://itsonu.github.io/open-transfer/)** · **[Download](https://github.com/itsonu/open-transfer/releases/latest)** · **[Docs](docs/architecture.md)**
+
+[![CI](https://github.com/itsonu/open-transfer/actions/workflows/ci.yml/badge.svg)](https://github.com/itsonu/open-transfer/actions/workflows/ci.yml)
+[![Security](https://github.com/itsonu/open-transfer/actions/workflows/security.yml/badge.svg)](https://github.com/itsonu/open-transfer/actions/workflows/security.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776ab.svg)
 ![Platforms](https://img.shields.io/badge/runs%20on-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Docker-555.svg)
@@ -48,12 +50,34 @@ Run it on one computer; every other device just opens a link (or scans a QR code
 
 ## Quick start
 
+### Option 1 — Download the app (no Python needed)
+
+Grab the file for your computer from the [latest release](https://github.com/itsonu/open-transfer/releases/latest) and double-click it. A window shows the address, a QR code and where files are saved (`Downloads/Open Transfer`); your browser opens automatically. Close the window to stop sharing.
+
+| Computer | File | First launch |
+| -------- | ---- | ------------ |
+| **Windows** | `open-transfer-windows-x64.exe` | SmartScreen may warn about an unknown publisher → **More info → Run anyway**. Allow access on **Private networks** when the firewall asks. |
+| **macOS** (Apple silicon) | `open-transfer-macos-arm64.tar.gz` | Double-click to unzip, then **right-click → Open** the first time (the app isn’t notarised yet). Intel Macs: build it yourself (below). |
+| **Linux** | `open-transfer-linux-x64.tar.gz` | `tar -xzf open-transfer-linux-x64.tar.gz && ./open-transfer` |
+
+The app accepts the same options as the command line, e.g. `open-transfer.exe D:\Share --pin`.
+
+**Build the app yourself** — one command on the OS you want it for (Python 3.10+):
+
+```bash
+python3 scripts/build_app.py      # → dist/open-transfer   (Windows: py scripts\build_app.py → dist\open-transfer.exe)
+```
+
+It uses an isolated `.build-venv`, bundles everything with PyInstaller into a single ~13 MB file, and checks the result actually starts. CI builds all three platforms on every pull request (downloadable from the run's *Artifacts*), and pushing a `v*` tag attaches them to a GitHub release.
+
+### Option 2 — Run from source
+
 You need **Python 3.10+** ([download](https://www.python.org/downloads/)). Everything else is installed for you in a private `.venv` folder on first run.
 
 **macOS / Linux**
 
 ```bash
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 ./run.sh
 ```
@@ -61,7 +85,7 @@ cd open-transfer
 **Windows (PowerShell)**
 
 ```powershell
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 .\run.ps1
 ```
@@ -80,14 +104,14 @@ Your browser opens and the terminal shows the address and a QR code:
   █ ▄▄▄ █ ▀█▄▀ █ ▄▄▄ █   …
 ```
 
-<details>
+<details markdown="1">
 <summary><b>Other ways to run it</b> — pipx, Docker, standalone binary</summary>
 
 | Method | Command |
 | ------ | ------- |
-| **pipx / uv** (installs the `open-transfer` command) | `pipx install git+https://github.com/itsonu/file-transfer` or `uv tool install git+https://github.com/itsonu/file-transfer` |
+| **pipx / uv** (installs the `open-transfer` command) | `pipx install git+https://github.com/itsonu/open-transfer` or `uv tool install git+https://github.com/itsonu/open-transfer` |
 | **Docker** | `docker compose up -d` (see [Self-hosting](#self-hosting--docker)) |
-| **Standalone binary** (no Python needed) | Download from [Releases](https://github.com/itsonu/file-transfer/releases) and double-click, or build with `make binary` |
+| **Standalone app** (no Python needed) | See [Option 1](#option-1--download-the-app-no-python-needed), or build it with `python3 scripts/build_app.py` |
 | **From source, manually** | `python -m venv .venv && .venv/bin/pip install -e . && .venv/bin/open-transfer` |
 
 </details>
@@ -256,13 +280,13 @@ make check     # everything CI runs: lint, types, unit + browser tests
 | `make typecheck` | mypy (strict) |
 | `make audit` | Dependency vulnerability scan (pip-audit) |
 | `make cov` | Coverage report |
-| `make docker` / `make binary` | Container image / standalone executable |
+| `make docker` / `make app` | Container image / standalone app (`scripts/build_app.py`) |
 
 The front end is plain HTML, CSS and a single ES module in `src/open_transfer/static/` — edit and reload, no bundler. CI runs on Linux, macOS and Windows across Python 3.10–3.14, plus browser tests, a Docker smoke test, CodeQL and dependency audits.
 
 ## Troubleshooting
 
-<details>
+<details markdown="1">
 <summary><b>My phone can't open the link</b></summary>
 
 - Make sure both devices are on the **same Wi‑Fi**. Guest networks and some routers isolate devices from each other ("AP/client isolation").
@@ -270,19 +294,19 @@ The front end is plain HTML, CSS and a single ES module in `src/open_transfer/st
 - If the computer has several network adapters (VPN, Docker, virtual machines), try the other addresses listed under **Add a device → Other addresses**.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>"Port 5000 is busy, using 5001 instead"</b></summary>
 
 On macOS, AirPlay Receiver uses port 5000. Open Transfer picks the next free port automatically — use the address it prints, or choose one with `--port 8080`.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>"Requests for '…' are not accepted"</b></summary>
 
 You're reaching the server by a host name it doesn't recognise (DNS-rebinding protection). Start it with `--allow-host that.name` or use the IP address.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Uploads fail behind nginx</b></summary>
 
 nginx limits request bodies to 1 MB by default. Set `client_max_body_size 0;` and `proxy_request_buffering off;` — see [docs/self-hosting.md](docs/self-hosting.md).
@@ -300,7 +324,7 @@ nginx limits request bodies to 1 MB by default. Set `client_max_body_size 0;` an
 - [ ] Translations (i18n)
 - [ ] Publish to PyPI and Homebrew
 
-Have an idea? [Open a feature request](https://github.com/itsonu/file-transfer/issues/new/choose).
+Have an idea? [Open a feature request](https://github.com/itsonu/open-transfer/issues/new/choose).
 
 ## Contributing
 

@@ -4,7 +4,7 @@ Thanks for helping! Bug reports, docs fixes, design polish and code are all welc
 
 ## Ways to help
 
-- **Report a bug** — use the [bug template](https://github.com/itsonu/file-transfer/issues/new/choose). Include the sharing OS, the device/browser that failed and `--verbose` output.
+- **Report a bug** — use the [bug template](https://github.com/itsonu/open-transfer/issues/new/choose). Include the sharing OS, the device/browser that failed and `--verbose` output.
 - **Suggest a feature** — describe the problem first; check the [roadmap](README.md#roadmap).
 - **Pick up an issue** — look for `good first issue` and `help wanted`. Comment so nobody duplicates work.
 - **Security issues** — please don't open a public issue; see [SECURITY.md](SECURITY.md).
@@ -14,7 +14,7 @@ Thanks for helping! Bug reports, docs fixes, design polish and code are all welc
 Requirements: Python 3.10+, Git, and optionally Node.js (for `node --check` in `make lint`).
 
 ```bash
-git clone https://github.com/itsonu/file-transfer.git open-transfer
+git clone https://github.com/itsonu/open-transfer.git
 cd open-transfer
 make setup        # .venv with dev tools, pre-commit hooks, Playwright Chromium
 make dev          # runs on ./.dev-share with request logging
@@ -55,6 +55,12 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 
 1. Update `__version__` in `src/open_transfer/__init__.py` and move *Unreleased* notes in `CHANGELOG.md` under the new version.
 2. Tag and push: `git tag v2.1.0 && git push --tags`.
-3. The *Release* workflow builds the wheel/sdist, standalone binaries for Linux, macOS and Windows, a multi-arch Docker image on GHCR, and a GitHub release.
+3. The *Release* workflow builds the wheel/sdist, the standalone app for Linux, macOS and Windows (via `scripts/build_app.py`), a multi-arch Docker image on GHCR, and a GitHub release.
+
+To build the standalone app locally: `python3 scripts/build_app.py` (or `make app`).
+
+### Website
+
+The project site lives in `site/` and is published to https://itsonu.github.io/open-transfer/ by the *Website* workflow on every push to `master` that touches it. Preview locally with `python scripts/build_site.py && python -m http.server -d _site`. One-time repository setting: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE) and to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

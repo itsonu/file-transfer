@@ -31,3 +31,5 @@ Thumbs.db
 # Local config
 .env
 *.log
+.build-venv/
+_site/

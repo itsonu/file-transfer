@@ -52,7 +52,8 @@ def build_parser() -> argparse.ArgumentParser:
         "directory",
         nargs="?",
         default=None,
-        help="folder to share and save uploads to (default: ./uploads, env: OPEN_TRANSFER_DIR)",
+        help="folder to share and save uploads to (default: ./uploads, or "
+        "~/Downloads/Open Transfer for the standalone app; env: OPEN_TRANSFER_DIR)",
     )
     parser.add_argument(
         "-p", "--port", type=int, default=None, help="port to listen on (default: 5000)"
@@ -119,6 +120,24 @@ def _pick(cli_value: object, env_name: str, default: object = None) -> object:
     return value if value is not None else default
 
 
+def is_frozen_app() -> bool:
+    """True when running as the standalone executable built by PyInstaller."""
+    return bool(getattr(sys, "frozen", False))
+
+
+def default_storage_dir() -> Path:
+    """Where files go when no folder is given.
+
+    From a checkout or ``pip install`` it's ``./uploads`` (predictable for
+    developers and scripts). The double-clickable app starts in whatever
+    directory the OS picks, so it uses ``~/Downloads/Open Transfer`` instead.
+    """
+    if not is_frozen_app():
+        return Path("uploads")
+    downloads = Path.home() / "Downloads"
+    return (downloads if downloads.is_dir() else Path.home()) / "Open Transfer"
+
+
 def config_from_args(args: argparse.Namespace) -> Config:
     pin = _pick(args.pin, "PIN")
     if pin == "auto":
@@ -126,7 +145,7 @@ def config_from_args(args: argparse.Namespace) -> Config:
     allowed = args.allow_host or [h for h in (env("ALLOWED_HOSTS") or "").split(",") if h]
     read_only = bool(args.read_only) or env_bool("READ_ONLY")
     return Config(
-        storage_dir=Path(str(_pick(args.directory, "DIR", "uploads"))),
+        storage_dir=Path(str(_pick(args.directory, "DIR", default_storage_dir()))),
         host=str(_pick(args.host, "HOST", "0.0.0.0")),
         port=int(str(_pick(args.port, "PORT", 5000))),
         pin=str(pin) if pin else None,
@@ -182,6 +201,15 @@ def _configure_logging(verbose: bool, style: _Style) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    code = _run(argv)
+    if code and is_frozen_app() and sys.stdin and sys.stdin.isatty():
+        # A double-clicked app's window would vanish before the error could be read.
+        with contextlib.suppress(EOFError, KeyboardInterrupt):
+            input("\n  Press Enter to close this window.")
+    return code
+
+
+def _run(argv: Sequence[str] | None) -> int:
     args = build_parser().parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
