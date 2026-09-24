@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import os
 import secrets
@@ -162,7 +163,8 @@ def _print_banner(config: Config, port: int, style: _Style, show_qr: bool) -> st
             out.write("\n  " + style.dim("Scan with your phone's camera:") + "\n\n")
             segno.make(qr_url, error="l").terminal(out=out, compact=True, border=2)
         except (UnicodeEncodeError, OSError):
-            pass
+            # Some Windows consoles can't draw block characters; the URL above is enough.
+            log.debug("could not print the QR code", exc_info=True)
     out.write("\n  " + style.dim("Press Ctrl+C to stop sharing.") + "\n\n")
     out.flush()
     return share
@@ -226,20 +228,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"open-transfer: error: could not listen on port {port}: {exc}", file=sys.stderr)
         return 1
 
-    show_qr = not (args.no_qr or env_bool("NO_QR"))
-    _print_banner(config, port, style, show_qr)
+    _print_banner(config, port, style, show_qr=not (args.no_qr or env_bool("NO_QR")))
     if not (args.no_browser or env_bool("NO_BROWSER")):
         threading.Timer(0.4, webbrowser.open, args=(f"http://localhost:{port}",)).start()
 
-    try:
-        server.serve()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.stop()
-        print(
-            "\n  "
-            + style.dim("Stopped sharing. Your files are still in ")
-            + str(config.storage_dir)
-        )
+    with contextlib.suppress(KeyboardInterrupt):  # Ctrl+C is the normal way to stop
+        try:
+            server.serve()
+        finally:
+            server.stop()
+    print("\n  " + style.dim("Stopped sharing. Your files are still in ") + str(config.storage_dir))
     return 0

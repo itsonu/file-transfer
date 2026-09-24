@@ -40,9 +40,15 @@ def zip_stream(paths: Iterable[Path]) -> Iterator[bytes]:
     sink = _Sink()
     with zipfile.ZipFile(sink, "w", compression=zipfile.ZIP_STORED, allowZip64=True) as archive:
         for path in paths:
-            info = zipfile.ZipInfo.from_file(path, arcname=path.name)
+            try:
+                # strict_timestamps=False: files dated before 1980 (the ZIP epoch)
+                # are clamped instead of aborting a half-sent download.
+                info = zipfile.ZipInfo.from_file(path, arcname=path.name, strict_timestamps=False)
+                src = path.open("rb")
+            except FileNotFoundError:  # deleted while the archive was streaming
+                continue
             info.compress_type = zipfile.ZIP_STORED
-            with path.open("rb") as src, archive.open(info, "w", force_zip64=True) as dst:
+            with src, archive.open(info, "w", force_zip64=True) as dst:
                 while True:
                     chunk = src.read(CHUNK_SIZE)
                     if not chunk:

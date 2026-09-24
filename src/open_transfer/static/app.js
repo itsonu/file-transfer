@@ -27,6 +27,9 @@ const state = {
   justAdded: new Set(), // names to highlight once they appear
   transfers: new Map(),
   pollTimer: 0,
+  pollGeneration: 0,
+  locked: false,
+  sentInBatch: [], // names sent since the last "Sent N files" toast
   started: false,
 };
 
@@ -160,6 +163,8 @@ function applyInfo(info) {
 }
 
 function showLock() {
+  state.locked = true;
+  state.online = null; // so unlocking shows "Connected" again
   stopPolling();
   showView("lock");
   setConnection("online", `Locked · ${state.info.device}`);
@@ -168,6 +173,7 @@ function showLock() {
 }
 
 function enterMain() {
+  state.locked = false;
   showView("main");
   if (!can("browse")) {
     $("#file-list").hidden = true;
@@ -211,7 +217,10 @@ function stopPolling() {
 
 async function poll(immediate = false) {
   stopPolling();
+  const generation = ++state.pollGeneration;
   if (immediate) await refresh();
+  // A newer poll() started while we awaited, or the page locked: let it own the timer.
+  if (generation !== state.pollGeneration || state.locked) return;
   const delay = document.hidden
     ? POLL_HIDDEN_MS
     : state.online === false
@@ -323,7 +332,10 @@ function renderFiles() {
     let entry = rows.get(file.name);
     if (!entry || entry.sig !== sig) {
       const el = buildFileRow(file);
-      if (entry) entry.el.replaceWith(el);
+      if (entry) {
+        if (cursor === entry.el) cursor = el; // keep our place in the list
+        entry.el.replaceWith(el);
+      }
       entry = { el, sig };
       rows.set(file.name, entry);
       if (state.justAdded.delete(file.name)) el.classList.add("is-new");
@@ -349,18 +361,19 @@ function renderFiles() {
   $("#no-results-term").textContent = state.search.trim();
   $("#search-wrap").hidden = all.length < 6 && !term;
   const download = $("#download-all");
-  download.hidden = all.length < 2;
+  download.hidden = all.length < 2 || (term && visible.length === 0);
   const query = term ? visible.map((f) => `name=${encodeURIComponent(f.name)}`).join("&") : "";
   download.href = `/api/archive${query ? `?${query}` : ""}`;
   download.querySelector("span").textContent = term ? `Download ${visible.length}` : "Download all";
 }
 
 async function deleteFile(file, row) {
+  if (state.hidden.has(file.name)) return; // already being deleted (double click)
   state.hidden.add(file.name);
   row.classList.add("is-leaving");
-  setTimeout(() => {
+  const timer = setTimeout(() => {
     row.remove();
-    rows.delete(file.name);
+    if (rows.get(file.name)?.el === row) rows.delete(file.name);
     renderFiles();
   }, 260);
   try {
@@ -372,8 +385,9 @@ async function deleteFile(file, row) {
       action: { label: "Undo", run: () => restoreFile(data.undo_token, file.name) },
     });
   } catch (err) {
+    clearTimeout(timer);
     state.hidden.delete(file.name);
-    rows.delete(file.name);
+    row.classList.remove("is-leaving");
     renderFiles();
     toast(err.status === 404 ? `“${file.name}” was already removed.` : err.message, { tone: "error", icon: "alert" });
     if (err.status === 404) poll(true);
@@ -466,6 +480,7 @@ function startUpload(t) {
       t.state = "done";
       t.loaded = t.size;
       t.savedName = saved?.name || t.name;
+      state.sentInBatch.push(t.savedName);
       state.justAdded.add(t.savedName);
       state.etag = null;
       setTimeout(() => removeTransfer(t), 3500);
@@ -498,11 +513,13 @@ function settle() {
   const list = [...state.transfers.values()];
   const busy = list.some((t) => t.state === "uploading" || t.state === "queued");
   if (busy) return;
-  const done = list.filter((t) => t.state === "done" && !t.announced);
+  // Finished rows disappear after a few seconds, so count sends as they happen.
+  const done = state.sentInBatch;
+  state.sentInBatch = [];
   const failed = list.filter((t) => t.state === "error" && !t.announced);
-  for (const t of [...done, ...failed]) t.announced = true;
+  for (const t of failed) t.announced = true;
   if (done.length && !failed.length) {
-    toast(done.length === 1 ? `Sent “${done[0].savedName}”` : `Sent ${done.length} files`, { tone: "success", icon: "check" });
+    toast(done.length === 1 ? `Sent “${done[0]}”` : `Sent ${done.length} files`, { tone: "success", icon: "check" });
   } else if (failed.length) {
     toast(
       done.length ? `Sent ${done.length} of ${done.length + failed.length} files` : failed.length === 1 ? "Couldn’t send the file" : `Couldn’t send ${failed.length} files`,

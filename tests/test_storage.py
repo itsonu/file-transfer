@@ -29,6 +29,7 @@ from open_transfer.storage import (
         ("Café 照片.txt", "Café 照片.txt"),
         ('bad<>:"|?*name.txt', "bad_______name.txt"),
         ("CON.txt", "_CON.txt"),
+        ("CON .txt", "_CON .txt"),
         ("lpt1", "_lpt1"),
         ("trailing dots...", "trailing dots"),
         ("tab\tand\nnewline", "tab_and_newline"),

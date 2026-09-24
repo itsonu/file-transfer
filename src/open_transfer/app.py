@@ -40,6 +40,7 @@ from open_transfer.security import (
     RateLimiter,
     apply_security_headers,
     host_allowed,
+    log_safe,
     pin_matches,
     same_origin,
 )
@@ -85,7 +86,7 @@ def _load_secret(storage: Storage) -> bytes:
         if len(data) >= 32:
             return data
     except OSError:
-        pass
+        log.debug("no stored session secret yet; creating one")
     data = secrets.token_bytes(32)
     try:
         fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -147,8 +148,9 @@ def create_app(config: Config | None = None) -> Flask:
     def request_host_port() -> tuple[str, int]:
         parts = urlsplit(f"//{request.host}")
         default = 443 if request.scheme == "https" else 80
-        port = app.config.get("OT_PORT") or parts.port or default
-        return parts.hostname or "localhost", int(port)
+        # The Host header's port is what the visitor actually used (it differs
+        # from the listen port behind Docker port mapping or a proxy).
+        return parts.hostname or "localhost", int(parts.port or default)
 
     def origin_for(host: str, port: int) -> str:
         scheme = request.scheme if request.scheme in {"http", "https"} else "http"
@@ -168,12 +170,28 @@ def create_app(config: Config | None = None) -> Flask:
     def all_urls() -> list[str]:
         urls = [share_url()]
         if not config.public_url:
-            _, port = request_host_port()
-            urls += [origin_for(ip, port) for ip in network.lan_ips()]
+            # LAN addresses reach the server directly, so use the listen port.
+            port = int(app.config.get("OT_PORT") or request_host_port()[1])
+            urls += [f"http://{ip}:{port}" for ip in network.lan_ips()]
         return list(dict.fromkeys(urls))
 
     def client_id() -> str:
-        return request.remote_addr or "unknown"
+        return log_safe(request.remote_addr or "unknown")
+
+    def check_pin(supplied: str) -> float | bool:
+        """``True`` if right, ``False`` if wrong, or seconds to wait if rate-limited."""
+        if not config.pin:
+            return True
+        wait = limiter.attempt(client_id())
+        if wait:
+            return wait
+        if pin_matches(config.pin, supplied):
+            limiter.reset(client_id())
+            session.permanent = True
+            session["pin"] = pin_digest
+            return True
+        log.warning("Wrong PIN from %s", client_id())
+        return False
 
     def server_info() -> dict[str, Any]:
         authed = is_authenticated()
@@ -229,8 +247,8 @@ def create_app(config: Config | None = None) -> Flask:
             elapsed = (time.perf_counter() - g.get("started", time.perf_counter())) * 1000
             log.debug(
                 "%s %s %s %.0fms %s",
-                request.method,
-                request.full_path.rstrip("?"),
+                log_safe(request.method),
+                log_safe(request.full_path.rstrip("?")),
                 response.status_code,
                 elapsed,
                 client_id(),
@@ -249,7 +267,7 @@ def create_app(config: Config | None = None) -> Flask:
 
     @app.errorhandler(Exception)
     def unhandled(exc: Exception) -> Response:
-        log.exception("Unhandled error on %s %s", request.method, request.path)
+        log.exception("Unhandled error on %s %s", log_safe(request.method), log_safe(request.path))
         return error(500, "internal_error", "Something went wrong on the sharing computer.")
 
     # ------------------------------------------------------------------ pages
@@ -260,9 +278,9 @@ def create_app(config: Config | None = None) -> Flask:
         if supplied is not None:
             # QR codes embed the PIN so scanning is enough to get in. Strip it
             # from the URL straight away so it does not linger in history.
-            if config.pin and pin_matches(config.pin, supplied):
-                session.permanent = True
-                session["pin"] = pin_digest
+            # Goes through the same rate limit as the PIN form.
+            if config.pin and not is_authenticated():
+                check_pin(supplied)
             return redirect(url_for("index"))
         return render_template("index.html", info=server_info(), version=__version__)
 
@@ -295,25 +313,21 @@ def create_app(config: Config | None = None) -> Flask:
     def auth() -> Response:
         if not config.pin:
             return jsonify({"authenticated": True})
-        wait = limiter.retry_after(client_id())
-        if wait:
-            response = error(
-                429,
-                "too_many_attempts",
-                "Too many wrong PINs. Try again shortly.",
-                retry_after=round(wait),
-            )
-            response.headers["Retry-After"] = str(max(1, round(wait)))
-            return response
         body = request.get_json(silent=True) or {}
-        if pin_matches(config.pin, str(body.get("pin", ""))):
-            limiter.reset(client_id())
-            session.permanent = True
-            session["pin"] = pin_digest
+        result = check_pin(str(body.get("pin", "")))
+        if result is True:
             return jsonify({"authenticated": True})
-        limiter.hit(client_id())
-        log.warning("Wrong PIN from %s", client_id())
-        return error(401, "wrong_pin", "That PIN isn't right.")
+        if result is False:
+            return error(401, "wrong_pin", "That PIN isn't right.")
+        wait = float(result)
+        response = error(
+            429,
+            "too_many_attempts",
+            "Too many wrong PINs. Try again shortly.",
+            retry_after=round(wait),
+        )
+        response.headers["Retry-After"] = str(max(1, round(wait)))
+        return response
 
     @app.post("/api/logout")
     def logout() -> Response:
@@ -369,8 +383,10 @@ def create_app(config: Config | None = None) -> Flask:
                     # Without a length or a server that de-chunks the body we
                     # can't tell a complete upload from an empty one.
                     return error(411, "length_required", "Send a Content-Length header.")
-                raw_name = request.headers.get("X-Filename") or request.args.get("name", "")
-                name = unquote(raw_name)
+                # The header is percent-encoded by clients; the query string is
+                # already decoded by Werkzeug, so don't decode it twice.
+                header = request.headers.get("X-Filename")
+                name = unquote(header) if header else request.args.get("name", "")
                 if not name:
                     raise InvalidName("Missing file name (send an X-Filename header).")
                 saved.append(
@@ -384,7 +400,7 @@ def create_app(config: Config | None = None) -> Flask:
         except (ClientDisconnected, ConnectionError) as exc:
             raise IncompleteUpload("The upload was interrupted before it finished.") from exc
         for f in saved:
-            log.info("Received %s (%s bytes) from %s", f.name, f.size, client_id())
+            log.info("Received %s (%s bytes) from %s", log_safe(f.name), f.size, client_id())
         return jsonify({"files": [f.to_dict() for f in saved]}), 201
 
     @app.delete("/api/files/<path:name>")
@@ -393,14 +409,14 @@ def create_app(config: Config | None = None) -> Flask:
         if not config.allow_delete:
             return error(403, "delete_disabled", "Deleting is turned off on this computer.")
         token = storage.delete(name)
-        log.info("Deleted %s (by %s)", name, client_id())
+        log.info("Deleted %s (by %s)", log_safe(name), client_id())
         return jsonify({"undo_token": token, "undo_seconds": config.trash_ttl})
 
     @app.post("/api/trash/<token>/restore")
     def restore_file(token: str) -> Response:
         require_browse()
         restored = storage.restore(token)
-        log.info("Restored %s (by %s)", restored.name, client_id())
+        log.info("Restored %s (by %s)", log_safe(restored.name), client_id())
         return jsonify({"file": restored.to_dict()})
 
     @app.get("/api/archive")
@@ -453,7 +469,7 @@ def create_app(config: Config | None = None) -> Flask:
         )
         response.headers["Content-Security-Policy"] = FILE_CSP
         if request.method == "GET" and not request.range and not inline:
-            log.info("Sent %s to %s", path.name, client_id())
+            log.info("Sent %s to %s", log_safe(path.name), client_id())
         return response
 
     return app

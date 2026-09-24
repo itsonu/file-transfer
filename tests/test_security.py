@@ -171,3 +171,28 @@ def test_behind_proxy_uses_forwarded_client_ip(make_app: AppFactory) -> None:
 def test_https_public_url_sets_secure_cookie(make_app: AppFactory) -> None:
     app = make_app(public_url="https://files.example.com")
     assert app.config["SESSION_COOKIE_SECURE"] is True
+
+
+def test_pin_in_link_is_rate_limited(locked: FlaskClient) -> None:
+    for _ in range(5):
+        locked.get("/?pin=0000")
+    locked.get("/?pin=4821")  # correct, but over the limit
+    assert locked.get("/api/files").status_code == 401
+    assert locked.post("/api/auth", json={"pin": "4821"}).status_code == 429
+
+
+def test_rate_limiter_attempt_is_atomic_under_concurrency() -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    limiter = RateLimiter(attempts=5, window=60)
+    with ThreadPoolExecutor(max_workers=32) as pool:
+        allowed = sum(
+            1 for wait in pool.map(lambda _: limiter.attempt("ip"), range(64)) if not wait
+        )
+    assert allowed == 5
+
+
+def test_log_safe_neutralises_newlines() -> None:
+    from open_transfer.security import log_safe
+
+    assert log_safe("a\nFAKE LOG LINE\r") == "a\\nFAKE LOG LINE\\r"

@@ -68,6 +68,7 @@ def browser() -> Iterator[object]:
             b = p.chromium.launch()
         except Exception as exc:  # pragma: no cover - depends on the machine
             pytest.skip(f"Chromium not available: {exc}")
+            return
         yield b
         b.close()
 
@@ -170,3 +171,25 @@ def test_receive_only(tmp_path: Path, page) -> None:  # type: ignore[no-untyped-
         page.goto(srv.url)
         sync_api.expect(page.locator("#receive-only")).to_be_visible()
         sync_api.expect(page.locator("#dropzone")).to_be_visible()
+
+
+def test_list_survives_a_file_growing_on_disk(server: Server, page) -> None:  # type: ignore[no-untyped-def]
+    # e.g. the owner copies a big file into the folder: it's the first row and its
+    # size changes between polls, so the row is rebuilt in place.
+    (server.root / "older.txt").write_bytes(b"x")
+    growing = server.root / "copying.bin"
+    growing.write_bytes(b"x" * 1000)
+    page.goto(server.url)
+    sync_api.expect(page.locator(".file-row")).to_have_count(2)
+    with growing.open("ab") as fh:
+        fh.write(b"x" * 2_000_000)
+    # A rendering error would be caught by the poller and shown as "Reconnecting…",
+    # so watch the connection state closely while the row is rebuilt.
+    states = set()
+    deadline = time.time() + 6
+    while time.time() < deadline:
+        states.add(page.locator("#connection").get_attribute("data-state"))
+        page.wait_for_timeout(100)
+    assert states == {"online"}
+    sync_api.expect(page.locator(".file-row", has_text="copying.bin")).to_contain_text("2.0 MB")
+    sync_api.expect(page.locator(".file-row")).to_have_count(2)

@@ -113,9 +113,30 @@ class RateLimiter:
         with self._lock:
             self._prune(key, time.monotonic()).append(time.monotonic())
 
+    def attempt(self, key: str) -> float:
+        """Atomically reserve one attempt for ``key``.
+
+        Returns 0 when the attempt is allowed (and counts it), otherwise the
+        seconds to wait. Checking and counting under one lock means a burst
+        of parallel requests can't all slip past the limit. Call
+        :meth:`reset` after a successful attempt.
+        """
+        now = time.monotonic()
+        with self._lock:
+            hits = self._prune(key, now)
+            if len(hits) >= self.attempts:
+                return max(0.001, self.window - (now - hits[0]))
+            hits.append(now)
+            return 0.0
+
     def reset(self, key: str) -> None:
         with self._lock:
             self._hits.pop(key, None)
+
+
+def log_safe(value: object) -> str:
+    """Neutralise line breaks so client-supplied text can't forge log lines."""
+    return str(value).replace("\r", "\\r").replace("\n", "\\n")
 
 
 def apply_security_headers(response: Response) -> Response:

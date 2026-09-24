@@ -13,6 +13,7 @@ Design notes
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import mimetypes
 import os
@@ -36,6 +37,8 @@ _WINDOWS_RESERVED = {
     *(f"COM{i}" for i in range(1, 10)),
     *(f"LPT{i}" for i in range(1, 10)),
 }  # fmt: skip
+# ":" on Windows would address NTFS alternate data streams ("a.txt:secret").
+_PATH_CHARS = "/\\\0:" if os.name == "nt" else "/\\\0"
 _UNSAFE_CHARS = re.compile(r'[\x00-\x1f\x7f<>:"/\\|?*]')
 
 _KINDS = {
@@ -92,7 +95,7 @@ def safe_filename(name: str) -> str:
     name = name.replace("\\", "/").rsplit("/", 1)[-1]
     name = _UNSAFE_CHARS.sub("_", name)
     name = re.sub(r"\s+", " ", name).strip(" .")
-    if name.partition(".")[0].upper() in _WINDOWS_RESERVED:
+    if name.partition(".")[0].rstrip(" ").upper() in _WINDOWS_RESERVED:
         name = f"_{name}"
     if not name:
         raise InvalidName("File name is empty or not allowed.")
@@ -104,6 +107,15 @@ def safe_filename(name: str) -> str:
         base = base.encode("utf-8")[:keep].decode("utf-8", "ignore").rstrip(" .")
         name = base + ext_bytes.decode("utf-8", "ignore")
     return name
+
+
+def is_listable_name(name: str) -> bool:
+    """True for a plain file name that may be listed and served.
+
+    Rejects paths (``/``, ``\\``), NUL, ``.``/``..`` and hidden names — which
+    also covers the ``.open-transfer`` state folder.
+    """
+    return bool(name) and not name.startswith(".") and not any(c in name for c in _PATH_CHARS)
 
 
 def file_kind(name: str) -> str:
@@ -146,6 +158,8 @@ class Storage:
         self._state = self.root / STATE_DIR
         self._incoming = self._state / "incoming"
         self._trash = self._state / "trash"
+        self._root_str = str(self.root)
+        self._root_prefix = os.path.join(self._root_str, "")
         self._lock = threading.Lock()
         for directory in (self.root, self._incoming, self._trash):
             directory.mkdir(parents=True, exist_ok=True)
@@ -161,7 +175,7 @@ class Storage:
         except FileNotFoundError:
             return files
         for entry in entries:
-            if entry.name.startswith(".") or entry.is_symlink() or not entry.is_file():
+            if not is_listable_name(entry.name) or entry.is_symlink() or not entry.is_file():
                 continue
             try:
                 files.append(FileInfo.from_path(Path(entry.path)))
@@ -179,14 +193,20 @@ class Storage:
         return digest.hexdigest()
 
     def resolve(self, name: str) -> Path:
-        """Return the path of an existing shared file or raise :class:`NotFound`."""
-        try:
-            if name != safe_filename(name):
-                raise NotFound("File not found.")
-        except InvalidName:
-            raise NotFound("File not found.") from None
-        path = self.root / name
-        if path.is_symlink() or not path.is_file() or path.resolve().parent != self.root:
+        """Return the path of an existing shared file or raise :class:`NotFound`.
+
+        Accepts any name :meth:`files` can list — including ones the owner
+        copied in by hand (``Café.pdf`` in NFD, ``what?.txt``) — but never a
+        path: no separators, no hidden files, no symlinks, nothing outside
+        the shared folder.
+        """
+        if not is_listable_name(name):
+            raise NotFound("File not found.")
+        candidate = os.path.normpath(os.path.join(self._root_str, name))
+        if not candidate.startswith(self._root_prefix):
+            raise NotFound("File not found.")
+        path = Path(candidate)
+        if path.parent != self.root or path.is_symlink() or not path.is_file():
             raise NotFound("File not found.")
         return path
 
@@ -219,16 +239,24 @@ class Storage:
         part = self._incoming / f"{secrets.token_hex(8)}.part"
         received = 0
         try:
-            with part.open("wb") as out:
-                for chunk in _iter_chunks(stream):
-                    received += len(chunk)
-                    if max_size and received > max_size:
-                        raise TooLarge(f"File is larger than the {_human(max_size)} limit.")
-                    if length is None and received > free:
-                        raise InsufficientStorage(
-                            "Not enough free disk space on the receiving computer."
-                        )
-                    out.write(chunk)
+            try:
+                with part.open("wb") as out:
+                    for chunk in _iter_chunks(stream):
+                        received += len(chunk)
+                        if max_size and received > max_size:
+                            raise TooLarge(f"File is larger than the {_human(max_size)} limit.")
+                        if length is None and received > free:
+                            raise InsufficientStorage(
+                                "Not enough free disk space on the receiving computer."
+                            )
+                        out.write(chunk)
+            except OSError as exc:
+                # e.g. several big uploads at once used up the space together
+                if exc.errno in (errno.ENOSPC, errno.EDQUOT):
+                    raise InsufficientStorage(
+                        "Not enough free disk space on the receiving computer."
+                    ) from exc
+                raise
             if length is not None and received != length:
                 raise IncompleteUpload("The upload was interrupted before it finished.")
             return self._publish(part, name)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import zipfile
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import Flask
 from flask.testing import FlaskClient
@@ -156,7 +157,8 @@ def test_delete_and_undo(client: FlaskClient) -> None:
 
 
 def test_delete_missing(client: FlaskClient) -> None:
-    assert client.delete("/api/files/nope.txt").status_code == 404
+    res = client.delete("/api/files/nope.txt")
+    assert res.status_code == 404
 
 
 def test_archive_all_and_selected(client: FlaskClient) -> None:
@@ -218,7 +220,8 @@ def test_receive_only_mode(make_app: AppFactory) -> None:
     assert client.get("/api/files").status_code == 403
     assert client.get("/files/a.txt").status_code == 403
     assert client.get("/api/archive").status_code == 403
-    assert client.delete("/api/files/a.txt").status_code == 403
+    deleted = client.delete("/api/files/a.txt")
+    assert deleted.status_code == 403
     assert client.get("/api/info").json["permissions"]["browse"] is False
 
 
@@ -241,3 +244,46 @@ def test_upload_without_length_on_non_streaming_server(app: Flask, client: Flask
     _, status, _ = run_wsgi_app(app, environ, buffered=True)
     assert status.startswith("411")
     assert client.get("/api/files").json["files"] == []
+
+
+def test_files_copied_in_by_the_owner_are_downloadable(
+    client: FlaskClient, share_dir: Path
+) -> None:
+    # Names safe_filename would rewrite: macOS NFD, "?", double spaces, 244-byte dedupes
+    names = ["Cafe\u0301.pdf", "what?.txt", "two  spaces.txt"]
+    for name in names:
+        (share_dir / name).write_bytes(b"x")
+    long_name = "a" * 236 + ".txt"
+    upload(client, long_name)
+    second = upload(client, long_name).json["files"][0]["name"]
+    listed = {f["name"] for f in client.get("/api/files").json["files"]}
+    for name in [*names, second]:
+        assert name in listed
+        assert client.get(f"/files/{quote(name)}").status_code == 200, name
+    with zipfile.ZipFile(io.BytesIO(client.get("/api/archive").data)) as zf:
+        assert len(zf.namelist()) == 5
+    res = client.delete(f"/api/files/{quote(second)}")
+    assert res.status_code == 200
+
+
+def test_archive_handles_files_older_than_1980(client: FlaskClient, share_dir: Path) -> None:
+    import os
+
+    upload(client, "old.txt", b"vintage")
+    os.utime(share_dir / "old.txt", (0, 0))
+    with zipfile.ZipFile(io.BytesIO(client.get("/api/archive").data)) as zf:
+        assert zf.read("old.txt") == b"vintage"
+
+
+def test_share_url_uses_the_port_the_visitor_used(app: Flask) -> None:
+    app.config["OT_PORT"] = 5000  # listen port inside a container
+    client = app.test_client()
+    info = client.get("/api/info", headers={"Host": "192.168.1.5:8080"}).json
+    assert info["share_url"] == "http://192.168.1.5:8080"
+
+
+def test_name_query_param_is_not_decoded_twice(client: FlaskClient) -> None:
+    res = client.post(
+        "/api/files?name=100%2525.txt", data=b"x", content_type="application/octet-stream"
+    )
+    assert res.json["files"][0]["name"] == "100%25.txt"

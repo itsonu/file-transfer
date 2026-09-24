@@ -9,7 +9,11 @@ Set-Location -Path $PSScriptRoot
 
 $venv = ".venv"
 $stamp = Join-Path $venv ".open-transfer-installed"
-$python = Join-Path $venv "Scripts\python.exe"
+# Windows venvs use Scripts\*.exe; PowerShell on macOS/Linux gets bin/*.
+$onWindows = $env:OS -eq "Windows_NT"
+$bin = if ($onWindows) { Join-Path $venv "Scripts" } else { Join-Path $venv "bin" }
+$exe = if ($onWindows) { ".exe" } else { "" }
+$python = Join-Path $bin "python$exe"
 
 $needsInstall = -not (Test-Path $stamp) -or ((Get-Item "pyproject.toml").LastWriteTime -gt (Get-Item $stamp).LastWriteTime)
 if ($needsInstall) {
@@ -19,10 +23,11 @@ if ($needsInstall) {
         uv pip install -q --python $python -e .
     } else {
         $py = $null
-        foreach ($candidate in @("py -3", "python", "python3")) {
-            $exe, $rest = $candidate.Split(" ")
-            if (Get-Command $exe -ErrorAction SilentlyContinue) {
-                & $exe @rest -c "import sys; sys.exit(sys.version_info < (3, 10))" 2>$null
+        # "python" first: the "py" launcher can stop on an interactive first-run prompt.
+        foreach ($candidate in @("python", "python3", "py -3")) {
+            $cmd, $rest = $candidate.Split(" ")
+            if (Get-Command $cmd -ErrorAction SilentlyContinue) {
+                & $cmd @rest -c "import sys; sys.exit(sys.version_info < (3, 10))" 2>$null
                 if ($LASTEXITCODE -eq 0) { $py = $candidate; break }
             }
         }
@@ -30,12 +35,12 @@ if ($needsInstall) {
             Write-Host "  Open Transfer needs Python 3.10 or newer: https://www.python.org/downloads/"
             exit 1
         }
-        $exe, $rest = $py.Split(" ")
-        if (-not (Test-Path $python)) { & $exe @rest -m venv $venv }
+        $cmd, $rest = $py.Split(" ")
+        if (-not (Test-Path $python)) { & $cmd @rest -m venv $venv }
         & $python -m pip install -q --disable-pip-version-check -e .
     }
     New-Item -ItemType File -Force -Path $stamp | Out-Null
 }
 
-& (Join-Path $venv "Scripts\open-transfer.exe") @args
+& (Join-Path $bin "open-transfer$exe") @args
 exit $LASTEXITCODE

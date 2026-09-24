@@ -45,7 +45,7 @@ typecheck: .venv/.dev-installed ## Static type checking
 	$(BIN)/mypy
 
 audit: .venv/.dev-installed ## Scan dependencies for known vulnerabilities
-	$(BIN)/pip-audit --skip-editable
+	$(BIN)/pip-audit --strict .
 
 check: lint typecheck test e2e ## Everything CI runs
 

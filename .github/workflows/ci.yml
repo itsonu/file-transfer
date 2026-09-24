@@ -93,10 +93,14 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Start-Process pwsh -ArgumentList "-File", ".\run.ps1", "--no-browser", "--no-qr", "--port", "5055"
-          for ($i = 0; $i -lt 90; $i++) {
-            try { Invoke-RestMethod http://127.0.0.1:5055/api/health; exit 0 } catch { Start-Sleep 1 }
+          $proc = Start-Process pwsh -PassThru -NoNewWindow `
+            -ArgumentList "-NonInteractive", "-File", ".\run.ps1", "--no-browser", "--no-qr", "--port", "5055" `
+            -RedirectStandardOutput runner.log -RedirectStandardError runner.err
+          $deadline = (Get-Date).AddMinutes(4)
+          while ((Get-Date) -lt $deadline -and -not $proc.HasExited) {
+            try { Invoke-RestMethod -TimeoutSec 2 http://127.0.0.1:5055/api/health; exit 0 } catch { Start-Sleep 1 }
           }
+          Write-Host "--- runner output ---"; Get-Content runner.log, runner.err -ErrorAction SilentlyContinue
           exit 1
 
   docker:
