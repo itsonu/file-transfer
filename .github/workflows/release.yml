@@ -1,12 +1,23 @@
 name: Release
 
+# Two ways to release:
+#   1. Push a tag:            git tag v2.1.0 && git push origin v2.1.0
+#   2. Actions → Release → "Run workflow" on master with tag "v2.1.0"
+#      (creates the tag on that commit; handy when you can't push tags).
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag to create and release, e.g. v2.1.0 (must match __version__)"
+        required: true
 
 permissions:
   contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   python:
@@ -17,6 +28,16 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+      - name: Tag matches the package version
+        run: |
+          python - <<'PY'
+          import os, re, sys
+          version = re.search(r'__version__ = "(.+?)"', open("src/open_transfer/__init__.py").read())[1]
+          tag = os.environ["TAG"]
+          if tag != f"v{version}":
+              sys.exit(f"Tag {tag} does not match __version__ {version}")
+          print(f"Releasing {tag}")
+          PY
       - run: pip install build && python -m build
       - uses: actions/upload-artifact@v4
         with:
@@ -73,8 +94,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/open-transfer
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=${{ env.TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.TAG }}
             type=raw,value=latest
       - uses: docker/build-push-action@v6
         with:
@@ -97,5 +118,8 @@ jobs:
           merge-multiple: true
       - uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.sha }}
+          name: Open Transfer ${{ env.TAG }}
           files: artifacts/*
           generate_release_notes: true
