@@ -4,13 +4,6 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
-### Added
-- One-command app build: `python scripts/build_app.py` produces a single double-clickable executable (`dist/open-transfer[.exe]`, ~13 MB, no Python needed to run) and smoke-tests it.
-- CI builds and launches the app on Windows, macOS and Linux for every pull request and uploads it as a downloadable artifact; releases ship `.exe` / `.tar.gz` files.
-
-### Changed
-- The standalone app saves to `~/Downloads/Open Transfer` by default (instead of an `uploads` folder wherever it was launched from) and keeps its window open after a start-up error so the message can be read.
-
 ## [2.0.0] — 2026-09-24
 
 The project is now **Open Transfer**: a rewrite of the original Flask "File Transfer" app into a complete, installable product. Existing URLs (`/upload`, `/downloads`, `/download/<name>`, `POST /transfer`) keep working.
@@ -25,6 +18,7 @@ The project is now **Open Transfer**: a rewrite of the original Flask "File Tran
 - One-command runners (`run.sh`, `run.ps1`), `Makefile`, Dockerfile + Compose, PyInstaller spec, CI (Linux/macOS/Windows, Python 3.10–3.14, browser tests, Docker smoke test), CodeQL, pip-audit, Dependabot, release workflow.
 - Test suite: storage, API, security and CLI unit tests plus Playwright end-to-end tests.
 - Documentation: README, architecture, self-hosting, API, contributing, security policy, code of conduct.
+- **Standalone app**: `python scripts/build_app.py` builds a single double-clickable executable (~13 MB, no Python needed to run) and smoke-tests it. Releases ship it for Windows (`.exe`), macOS and Linux (`.tar.gz`); CI builds and launches all three on every pull request. It saves to `~/Downloads/Open Transfer` by default and keeps its window open after a start-up error.
 
 ### Changed
 - Uploads stream to disk (constant memory, no temp copy) via the cheroot server, and are published atomically; duplicate names get ` (1)` suffixes instead of overwriting.
@@ -38,7 +32,11 @@ The project is now **Open Transfer**: a rewrite of the original Flask "File Tran
 - The service worker cached the home page forever; it has been removed.
 
 ### Security
+- PIN attempts are rate-limited atomically (5 per minute per client), including the QR sign-in link; log output escapes client-supplied text.
 - CSRF and DNS-rebinding protection, strict Content-Security-Policy and hardening headers, sandboxed downloads, hidden files and symlinks are never served.
 
 ### Removed
 - Unrelated packet-sniffing and network-scanning scripts (`get.py`, `get2.py`, `scan.py`), the duplicate `backup.py`, the unused Tkinter import and IDE settings.
+
+[Unreleased]: https://github.com/itsonu/file-transfer/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/itsonu/file-transfer/releases/tag/v2.0.0
