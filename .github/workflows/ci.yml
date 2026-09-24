@@ -103,6 +103,39 @@ jobs:
           Write-Host "--- runner output ---"; Get-Content runner.log, runner.err -ErrorAction SilentlyContinue
           exit 1
 
+  app:
+    name: Standalone app (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, name: linux-x64 }
+          - { os: macos-latest, name: macos-arm64 }
+          - { os: windows-latest, name: windows-x64 }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      # Builds dist/open-transfer[.exe] and smoke-tests it (starts it, calls /api/health).
+      - run: python scripts/build_app.py
+      - name: Package
+        shell: bash
+        # .tar.gz keeps the executable bit on macOS/Linux; Windows gets the .exe as-is.
+        run: |
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            mv open-transfer.exe "open-transfer-${{ matrix.name }}.exe"
+          else
+            tar -czf "open-transfer-${{ matrix.name }}.tar.gz" open-transfer && rm open-transfer
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: open-transfer-${{ matrix.name }}
+          path: dist/open-transfer-*
+          retention-days: 14
+
   docker:
     name: Docker image
     runs-on: ubuntu-latest

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import sys
 from pathlib import Path
 
 import pytest
@@ -137,3 +138,27 @@ def test_banner_without_network(
     out = capsys.readouterr().out
     assert "only this computer can connect" in out
     assert "Scan" not in out
+
+
+def test_standalone_app_defaults_to_downloads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    assert cli.default_storage_dir() == Path("uploads")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    assert cli.default_storage_dir() == tmp_path / "Open Transfer"
+    (tmp_path / "Downloads").mkdir()
+    assert cli.default_storage_dir() == tmp_path / "Downloads" / "Open Transfer"
+    assert parse().storage_dir == (tmp_path / "Downloads" / "Open Transfer").resolve()
+
+
+def test_standalone_app_waits_before_closing_on_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    prompts: list[str] = []
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys.stdin, "isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt="": prompts.append(prompt) or "")
+    assert cli.main(["--pin", "1", "--no-browser"]) == 2
+    assert prompts
+    assert "Press Enter" in prompts[0]

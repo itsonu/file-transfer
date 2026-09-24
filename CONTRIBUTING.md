@@ -55,6 +55,8 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 
 1. Update `__version__` in `src/open_transfer/__init__.py` and move *Unreleased* notes in `CHANGELOG.md` under the new version.
 2. Tag and push: `git tag v2.1.0 && git push --tags`.
-3. The *Release* workflow builds the wheel/sdist, standalone binaries for Linux, macOS and Windows, a multi-arch Docker image on GHCR, and a GitHub release.
+3. The *Release* workflow builds the wheel/sdist, the standalone app for Linux, macOS and Windows (via `scripts/build_app.py`), a multi-arch Docker image on GHCR, and a GitHub release.
+
+To build the standalone app locally: `python3 scripts/build_app.py` (or `make app`).
 
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE) and to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

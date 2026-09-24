@@ -4,6 +4,13 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+- One-command app build: `python scripts/build_app.py` produces a single double-clickable executable (`dist/open-transfer[.exe]`, ~13 MB, no Python needed to run) and smoke-tests it.
+- CI builds and launches the app on Windows, macOS and Linux for every pull request and uploads it as a downloadable artifact; releases ship `.exe` / `.tar.gz` files.
+
+### Changed
+- The standalone app saves to `~/Downloads/Open Transfer` by default (instead of an `uploads` folder wherever it was launched from) and keeps its window open after a start-up error so the message can be read.
+
 ## [2.0.0] — 2026-09-24
 
 The project is now **Open Transfer**: a rewrite of the original Flask "File Transfer" app into a complete, installable product. Existing URLs (`/upload`, `/downloads`, `/download/<name>`, `POST /transfer`) keep working.

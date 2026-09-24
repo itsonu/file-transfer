@@ -3,7 +3,7 @@ PY ?= .venv/bin/python
 BIN := .venv/bin
 
 .DEFAULT_GOAL := help
-.PHONY: help setup run dev test e2e cov lint fmt typecheck audit check docker build binary clean
+.PHONY: help setup run dev test e2e cov lint fmt typecheck audit check docker build app binary clean
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -56,9 +56,11 @@ docker: ## Build and run the Docker image
 build: .venv/.dev-installed ## Build wheel and sdist into dist/
 	$(PY) -m pip install -q build && $(PY) -m build
 
-binary: .venv/.dev-installed ## Build a standalone executable with PyInstaller
-	$(PY) -m pip install -q pyinstaller && $(BIN)/pyinstaller --noconfirm packaging/open-transfer.spec
+app: ## Build the standalone, double-clickable app into dist/
+	python3 scripts/build_app.py
+
+binary: app
 
 clean: ## Remove build artefacts and caches
-	rm -rf build dist .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov .dev-share
+	rm -rf build dist .build-venv .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov .dev-share
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
