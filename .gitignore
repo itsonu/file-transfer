@@ -1,8 +1,33 @@
-# personal files that were being transferred — never publish
+# Shared files — personal data, never commit
 uploads/
+.dev-share/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
 build/
 dist/
-__pycache__/
-*.pyc
-*.log
+.eggs/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+test-results/
+
+# Editors & OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local config
 .env
+*.log

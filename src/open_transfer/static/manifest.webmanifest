@@ -1,0 +1,38 @@
+{
+  "name": "Open Transfer",
+  "short_name": "Transfer",
+  "description": "Share files with any device on your network. No app, no account, no cloud.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f7",
+  "theme_color": "#0071e3",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/static/icons/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

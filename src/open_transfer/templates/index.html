@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Open Transfer</title>
+  <meta name="description" content="Share files with any device on your network. No app, no account, no cloud.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Open Transfer">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" href="{{ url_for('static', filename='icons/logo.svg') }}" type="image/svg+xml">
+  <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('manifest') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css', v=version) }}">
+  <script type="module" src="{{ url_for('static', filename='app.js', v=version) }}"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-logo" viewBox="0 0 64 64">
+      <defs>
+        <linearGradient id="logo-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#40a0ff"/>
+          <stop offset="1" stop-color="#0058d6"/>
+        </linearGradient>
+      </defs>
+      <rect width="64" height="64" rx="15" fill="url(#logo-g)"/>
+      <path d="M24 44V20m-8 8 8-8 8 8M40 20v24m-8-8 8 8 8-8" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v12m0 0 5-5m-5 5-5-5M5 20h14"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2M14 18h2v2M18 18h2v2h-2"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 8v5m0 3.5v.01M10.3 3.9 2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></symbol>
+    <symbol id="i-retry" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 4v4h-4M20 12a8 8 0 0 1-14 5.3M4 20v-4h4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path d="M9 9h10v10H9zM5 15V5h10"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3v12m0-12L8 7m4-4 4 4M6 11H5v9h14v-9h-1"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4 4"/></symbol>
+    <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M3 13h5l1.5 3h5L16 13h5M5 5h14l2 8v6H3v-6z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M6 12.5a9 9 0 0 1 12 0M9.5 16a4 4 0 0 1 5 0M12 19.5v.01"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 16l4.5-4.5 4 4 2.5-2.5L20 18M15.5 9.5v.01"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><path d="M3 6h12v12H3zM15 10l6-3v10l-6-3"/></symbol>
+    <symbol id="i-audio" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm11-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><path d="M3 4h18v4H3zM5 8v12h14V8M10 12h4"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 10h16M4 15h16M10 4v16"/></symbol>
+    <symbol id="i-slides" viewBox="0 0 24 24"><path d="M3 4h18v12H3zM12 16v4M8 20h8"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-app" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></symbol>
+  </svg>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Open Transfer home">
+        <svg class="brand-mark" aria-hidden="true"><use href="#i-logo"/></svg>
+        <span class="brand-name">Open Transfer</span>
+      </a>
+      <div class="connection" id="connection" role="status" aria-live="polite">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span class="connection-text" id="connection-text">Connecting…</span>
+      </div>
+      <button class="btn btn-tinted" id="connect-button" type="button" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg>
+        <span>Add a device</span>
+      </button>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <!-- PIN screen -->
+      <section class="lock view" id="lock-view" hidden aria-labelledby="lock-title">
+        <div class="lock-card">
+          <div class="lock-icon" aria-hidden="true"><svg class="icon"><use href="#i-lock"/></svg></div>
+          <h1 id="lock-title">Enter PIN</h1>
+          <p class="muted">The PIN is shown on <strong class="device-name">the sharing computer</strong>. Scanning its QR code signs you in automatically.</p>
+          <form id="pin-form" class="pin-form" novalidate>
+            <label class="visually-hidden" for="pin-input">PIN</label>
+            <input id="pin-input" class="pin-input" name="pin" autocomplete="one-time-code" inputmode="numeric"
+                   autocapitalize="off" spellcheck="false" maxlength="32" required placeholder="••••">
+            <p class="field-error" id="pin-error" role="alert"></p>
+            <button class="btn btn-primary btn-large" type="submit" id="pin-submit">Continue</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Main view -->
+      <div class="view" id="main-view" hidden>
+        <section class="send" id="send-section" aria-labelledby="drop-title">
+          <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-describedby="drop-hint">
+            <div class="drop-icon" aria-hidden="true"><svg class="icon"><use href="#i-upload"/></svg></div>
+            <h1 class="drop-title" id="drop-title">
+              <span class="only-pointer">Drop files to share</span>
+              <span class="only-touch">Share files</span>
+            </h1>
+            <p class="drop-sub">
+              <span class="only-pointer">or <span class="link-like">choose from your computer</span></span>
+              <span class="only-touch"><span class="link-like">Tap to choose photos or files</span></span>
+            </p>
+            <p class="drop-hint" id="drop-hint"></p>
+            <input type="file" id="file-input" multiple hidden>
+          </div>
+        </section>
+
+        <section class="transfers" id="transfers" aria-label="Transfers" hidden>
+          <div class="section-head">
+            <h2>Sending</h2>
+            <span class="section-meta" id="transfers-meta"></span>
+            <button class="btn btn-plain btn-small" id="clear-transfers" type="button" hidden>Clear</button>
+          </div>
+          <ul class="list card" id="transfer-list"></ul>
+        </section>
+
+        <section class="library" id="library" aria-labelledby="library-title">
+          <div class="section-head">
+            <h2 id="library-title">Shared files</h2>
+            <span class="section-meta" id="library-meta"></span>
+            <div class="section-tools">
+              <label class="search" id="search-wrap" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+                <span class="visually-hidden">Search files</span>
+                <input type="search" id="search" placeholder="Search" autocomplete="off">
+              </label>
+              <a class="btn btn-plain btn-small" id="download-all" href="/api/archive" hidden download>
+                <svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>
+                <span>Download all</span>
+              </a>
+            </div>
+          </div>
+
+          <ul class="list card" id="file-list" aria-busy="true">
+            <li class="row skeleton" aria-hidden="true"><span class="thumb"></span><span class="lines"><span></span><span></span></span></li>
+            <li class="row skeleton" aria-hidden="true"><span class="thumb"></span><span class="lines"><span></span><span></span></span></li>
+            <li class="row skeleton" aria-hidden="true"><span class="thumb"></span><span class="lines"><span></span><span></span></span></li>
+          </ul>
+
+          <div class="empty card" id="empty" hidden>
+            <div class="empty-icon" aria-hidden="true"><svg class="icon"><use href="#i-inbox"/></svg></div>
+            <h3>No files yet</h3>
+            <p class="muted" id="empty-text">Files you send — or that others send to <span class="device-name">this computer</span> — will show up here.</p>
+            <button class="btn btn-tinted" type="button" id="empty-connect">
+              <svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg>
+              <span>Add another device</span>
+            </button>
+          </div>
+
+          <div class="empty card" id="no-results" hidden>
+            <h3>No matches</h3>
+            <p class="muted">No files match “<span id="no-results-term"></span>”.</p>
+          </div>
+
+          <div class="empty card" id="receive-only" hidden>
+            <div class="empty-icon" aria-hidden="true"><svg class="icon"><use href="#i-lock"/></svg></div>
+            <h3>Private inbox</h3>
+            <p class="muted">Files you send go straight to <span class="device-name">this computer</span>. Only its owner can see them.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- Fatal / offline-at-start -->
+      <section class="view fatal" id="fatal-view" hidden aria-labelledby="fatal-title">
+        <div class="empty">
+          <div class="empty-icon" aria-hidden="true"><svg class="icon"><use href="#i-wifi"/></svg></div>
+          <h1 id="fatal-title">Can’t reach the sharing computer</h1>
+          <p class="muted" id="fatal-text">Make sure Open Transfer is still running and that you’re on the same Wi-Fi network.</p>
+          <button class="btn btn-primary" id="fatal-retry" type="button">Try again</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Open Transfer {{ version }}</span>
+      <span aria-hidden="true">·</span>
+      <span>Files stay on your network</span>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/itsonu/file-transfer" rel="noopener" target="_blank">Open source</a>
+    </footer>
+  </div>
+
+  <div class="drop-overlay" id="drop-overlay" aria-hidden="true">
+    <div class="drop-overlay-inner">
+      <svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>
+      <p>Drop to share with <span class="device-name">everyone</span></p>
+    </div>
+  </div>
+
+  <dialog class="sheet" id="connect-dialog" aria-labelledby="connect-title">
+    <form method="dialog" class="sheet-close-form">
+      <button class="icon-btn sheet-close" aria-label="Close" value="close">
+        <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </form>
+    <h2 id="connect-title">Add a device</h2>
+    <p class="muted">Scan with a phone camera, or open the link on any device on the same Wi-Fi.</p>
+    <div class="qr-frame"><img id="qr-image" alt="QR code for the sharing link" width="200" height="200"></div>
+    <div class="url-field">
+      <code id="share-url" class="url-text"></code>
+      <button class="btn btn-tinted btn-small" type="button" id="copy-url">
+        <svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span>
+      </button>
+    </div>
+    <p class="pin-note" id="pin-note" hidden>PIN <strong id="pin-note-value"></strong> — the QR code includes it.</p>
+    <button class="btn btn-plain btn-block" type="button" id="share-url-button" hidden>
+      <svg class="icon" aria-hidden="true"><use href="#i-share"/></svg><span>Share link…</span>
+    </button>
+    <details class="other-urls" id="other-urls" hidden>
+      <summary>Other addresses</summary>
+      <ul id="other-url-list"></ul>
+    </details>
+  </dialog>
+
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script type="application/json" id="boot">{{ info | tojson }}</script>
+</body>
+</html>
