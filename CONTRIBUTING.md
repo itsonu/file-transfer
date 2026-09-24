@@ -59,4 +59,8 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 
 To build the standalone app locally: `python3 scripts/build_app.py` (or `make app`).
 
+### Website
+
+The project site lives in `site/` and is published to https://itsonu.github.io/open-transfer/ by the *Website* workflow on every push to `master` that touches it. Preview locally with `python scripts/build_site.py && python -m http.server -d _site`. One-time repository setting: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
 By contributing you agree that your contributions are licensed under the [MIT License](LICENSE) and to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

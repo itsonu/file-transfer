@@ -1,4 +1,4 @@
-<div align="center">
+<div align="center" markdown="1">
 
 <img src="src/open_transfer/static/icons/logo.svg" width="88" height="88" alt="Open Transfer logo">
 
@@ -104,7 +104,7 @@ Your browser opens and the terminal shows the address and a QR code:
   █ ▄▄▄ █ ▀█▄▀ █ ▄▄▄ █   …
 ```
 
-<details>
+<details markdown="1">
 <summary><b>Other ways to run it</b> — pipx, Docker, standalone binary</summary>
 
 | Method | Command |
@@ -286,7 +286,7 @@ The front end is plain HTML, CSS and a single ES module in `src/open_transfer/st
 
 ## Troubleshooting
 
-<details>
+<details markdown="1">
 <summary><b>My phone can't open the link</b></summary>
 
 - Make sure both devices are on the **same Wi‑Fi**. Guest networks and some routers isolate devices from each other ("AP/client isolation").
@@ -294,19 +294,19 @@ The front end is plain HTML, CSS and a single ES module in `src/open_transfer/st
 - If the computer has several network adapters (VPN, Docker, virtual machines), try the other addresses listed under **Add a device → Other addresses**.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>"Port 5000 is busy, using 5001 instead"</b></summary>
 
 On macOS, AirPlay Receiver uses port 5000. Open Transfer picks the next free port automatically — use the address it prints, or choose one with `--port 8080`.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>"Requests for '…' are not accepted"</b></summary>
 
 You're reaching the server by a host name it doesn't recognise (DNS-rebinding protection). Start it with `--allow-host that.name` or use the IP address.
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Uploads fail behind nginx</b></summary>
 
 nginx limits request bodies to 1 MB by default. Set `client_max_body_size 0;` and `proxy_request_buffering off;` — see [docs/self-hosting.md](docs/self-hosting.md).
