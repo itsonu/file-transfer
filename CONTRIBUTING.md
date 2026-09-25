@@ -54,7 +54,7 @@ See [docs/architecture.md](docs/architecture.md) for how the pieces fit together
 ## Releasing (maintainers)
 
 1. Update `__version__` in `src/open_transfer/__init__.py` and move *Unreleased* notes in `CHANGELOG.md` under the new version.
-2. Tag and push: `git tag v2.1.0 && git push --tags`.
+2. Tag and push: `git tag v2.1.0 && git push --tags` — or, without pushing a tag, run **Actions → Release → Run workflow** on `master` with tag `v2.1.0` (the workflow creates the tag). The tag must match `__version__`.
 3. The *Release* workflow builds the wheel/sdist, the standalone app for Linux, macOS and Windows (via `scripts/build_app.py`), a multi-arch Docker image on GHCR, and a GitHub release.
 
 To build the standalone app locally: `python3 scripts/build_app.py` (or `make app`).
