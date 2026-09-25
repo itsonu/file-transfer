@@ -4,6 +4,12 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+- Package `Changelog` URL pointed at a `main` branch that doesn't exist; it now uses `master`.
+
+### Changed
+- README and website footers credit the maintainer with a link to their portfolio.
+
 ## [2.0.0] — 2026-09-24
 
 The project is now **Open Transfer**: a rewrite of the original Flask "File Transfer" app into a complete, installable product. Existing URLs (`/upload`, `/downloads`, `/download/<name>`, `POST /transfer`) keep working.
