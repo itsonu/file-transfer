@@ -332,4 +332,4 @@ Contributions of all sizes are welcome — bug reports, docs, design polish and 
 
 ## License
 
-[MIT](LICENSE) © Open Transfer contributors · Maintained by [Chandrabhushan Prakash](https://portfolio-itsonu.vercel.app/)
+[MIT](LICENSE) © Open Transfer contributors · Maintained by [Chandrabhushan Prakash](https://techsoftsk.vercel.app/)
