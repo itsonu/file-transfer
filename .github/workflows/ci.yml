@@ -54,7 +54,7 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - run: pytest -m "not e2e" --cov --cov-report=term-missing --cov-report=xml
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
         with:
           name: coverage
@@ -132,7 +132,7 @@ jobs:
           else
             tar -czf "open-transfer-${{ matrix.name }}.tar.gz" open-transfer && rm open-transfer
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: open-transfer-${{ matrix.name }}
           path: dist/open-transfer-*
